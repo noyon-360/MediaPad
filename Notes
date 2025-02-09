@@ -1,0 +1,37 @@
+notepad_app/
+├── android/
+├── ios/
+├── web/
+├── lib/
+│   ├── core/                # Shared utilities and constants
+│   │   ├── constants/
+│   │   ├── errors/
+│   │   ├── theme/
+│   │   ├── utils/
+│   │   └── widgets/         # Reusable custom widgets
+│   │
+│   ├── data/                # Data layer
+│   │   ├── datasources/     # Remote (API) and local (Hive/SQLite) sources
+│   │   │   ├── note_remote_data_source.dart
+│   │   │   └── note_local_data_source.dart
+│   │   ├── models/          # Data Transfer Objects (DTOs)
+│   │   ├── repositories/    # Repository implementations
+│   │   └── api/             # API clients (Dio/HTTP)
+│   │
+│   ├── domain/              # Domain layer
+│   │   ├── entities/        # Business objects (e.g., Note)
+│   │   ├── repositories/    # Abstract repository contracts
+│   │   └── usecases/        # Business logic (e.g., GetNotesUseCase)
+│   │
+│   ├── presentation/        # Presentation layer (BLoC + UI)
+│   │   ├── pages/           # Screens
+│   │   │   ├── notes_list_page.dart
+│   │   │   └── note_detail_page.dart
+│   │   ├── bloc/            # BLoC classes
+│   │   ├── widgets/         # Feature-specific widgets
+│   │   └── theme/           # App-specific styling
+│   │
+│   └── main.dart            # App entry point
+│
+├── test/                    # Unit/Widget tests
+└── pubspec.yaml
