@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -20,6 +21,10 @@ class MediaNotesBloc extends Bloc<MediaNotesEvent, MediaNotesState> {
   List<File>? selectedFiles;
   List<PlatformFile>? selectedWebFiles;
 
+  final _noteController = StreamController<List<NoteModel>>.broadcast();
+
+  Stream<List<NoteModel>> get noteSteam => _noteController.stream;
+
   MediaNotesBloc({required this.apiService}) : super(MediaNotesInitial()) {
     on<LoadNotesEvent>(_loadNotesEvent);
     on<AddNoteEvent>(_addNoteEvent);
@@ -36,6 +41,7 @@ class MediaNotesBloc extends Bloc<MediaNotesEvent, MediaNotesState> {
       print("Im in the bloc");
       final notes = await apiService.getNotes();
       print(notes.map((e) => e.title).toList());
+      _noteController.add(notes);
       emit(MediaNotesLoadedState(notes: notes));
     } catch (e) {
       emit(MediaNotesErrorState(message: e.toString()));
@@ -58,6 +64,7 @@ class MediaNotesBloc extends Bloc<MediaNotesEvent, MediaNotesState> {
       }
       final notes = await apiService.getNotes();
       print("Check the response of add note api ${notes.map((e) => e.title)}");
+      _noteController.add(notes);
       emit(MediaNotesLoadedState(notes: notes));
     } catch (e) {
       emit(MediaNotesErrorState(message: e.toString()));
@@ -100,6 +107,7 @@ class MediaNotesBloc extends Bloc<MediaNotesEvent, MediaNotesState> {
     try {
       await apiService.editNote(event.noteId, event.title, event.content);
       final notes = await apiService.getNotes();
+      _noteController.add(notes);
       emit(MediaNotesLoadedState(notes: notes));
     } catch (e) {
       emit(MediaNotesErrorState(message: e.toString()));
@@ -112,9 +120,16 @@ class MediaNotesBloc extends Bloc<MediaNotesEvent, MediaNotesState> {
     try {
       await apiService.deleteNote(event.noteId);
       final notes = await apiService.getNotes();
+      _noteController.add(notes);
       emit(MediaNotesLoadedState(notes: notes));
     } catch (e) {
       emit(MediaNotesErrorState(message: e.toString()));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _noteController.close();
+    return super.close();
   }
 }

@@ -77,21 +77,40 @@ class _NotesListPageState extends State<NotesListPage> {
           ),
         ],
       ),
-      body: BlocBuilder<MediaNotesBloc, MediaNotesState>(
-        builder: (context, state) {
-          if (state is MediaNotesLoadingState) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is MediaNotesLoadedState) {
-            return _buildNotesLayout(state, isWeb);
-          }
-          // else if(state is MediaNotesFilesPickedState){
-          //   return _buildNotesLayout(state as MediaNotesLoadedState, isWeb);
-          // }
-          return Center(
-            child: Text("No notes found"),
-          );
-        },
-      ),
+      body: StreamBuilder<List<NoteModel>>(stream: context.read<MediaNotesBloc>().noteSteam, builder: (context, snapshot) {
+
+        if (snapshot.connectionState == ConnectionState.waiting){
+          return const Center(child: CircularProgressIndicator(),);
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text("Error : ${snapshot.error}"),);
+        }
+
+        if(!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text("No notes found"),);
+        }
+
+        return _buildNotesLayout(snapshot.data!, isWeb);
+
+      })
+
+      // BlocBuilder<MediaNotesBloc, MediaNotesState>(
+      //   builder: (context, state) {
+      //     if (state is MediaNotesLoadingState) {
+      //       return const Center(child: CircularProgressIndicator());
+      //     } else if (state is MediaNotesLoadedState) {
+      //       return _buildNotesLayout(state, isWeb);
+      //     }
+      //     // else if(state is MediaNotesFilesPickedState){
+      //     //   return _buildNotesLayout(state as MediaNotesLoadedState, isWeb);
+      //     // }
+      //     return Center(
+      //       child: Text("No notes found"),
+      //     );
+      //   },
+      // )
+      ,
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () {
@@ -118,7 +137,7 @@ class _NotesListPageState extends State<NotesListPage> {
     );
   }
 
-  Widget _buildNotesLayout(MediaNotesLoadedState state, bool isWeb) {
+  Widget _buildNotesLayout(List<NoteModel> notes , bool isWeb) {
     if (isWeb) {
       return Row(
         children: [
@@ -126,10 +145,10 @@ class _NotesListPageState extends State<NotesListPage> {
           SizedBox(
             width: 300, // Fixed width for the notes list
             child: ListView.builder(
-              itemCount: state.notes.length,
+              itemCount: notes.length,
               padding: const EdgeInsets.all(8),
               itemBuilder: (context, index) {
-                final note = state.notes[index];
+                final note = notes[index];
                 return GestureDetector(
                   onTap: () {
                     setState(() {
@@ -191,7 +210,7 @@ class _NotesListPageState extends State<NotesListPage> {
                             MediaQuery.of(context).size.width < 1000
                         ? const SizedBox
                             .shrink() // Hide form when details are shown on small screens
-                        : _buildNoteForm(state),
+                        : _buildNoteForm(notes),
                   ),
                 ],
               ),
@@ -205,7 +224,7 @@ class _NotesListPageState extends State<NotesListPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 300),
-                  child: _buildNoteDetails(state.notes[_selectedNoteIndex!]),
+                  child: _buildNoteDetails(notes[_selectedNoteIndex!]),
                 ),
               ),
             ),
@@ -216,9 +235,9 @@ class _NotesListPageState extends State<NotesListPage> {
       return BlocBuilder<MediaNotesBloc, MediaNotesState>(
         builder: (context, states) {
           return ListView.builder(
-            itemCount: state.notes.length,
+            itemCount: notes.length,
             itemBuilder: (context, index) {
-              final note = state.notes[index];
+              final note = notes[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -233,7 +252,7 @@ class _NotesListPageState extends State<NotesListPage> {
                   onDismissed: (direction) {
                     setState(() {
                       // Remove the note from the local list immediately
-                      state.notes.removeAt(index);
+                      notes.removeAt(index);
                     });
 
                     final noteId = note.id;
@@ -416,7 +435,7 @@ class _NotesListPageState extends State<NotesListPage> {
   //   );
   // }
 
-  Widget _buildNoteForm(MediaNotesLoadedState state) {
+  Widget _buildNoteForm(List<NoteModel> notes) {
     return SingleChildScrollView(
       child: Card(
         elevation: 4,
@@ -499,7 +518,7 @@ class _NotesListPageState extends State<NotesListPage> {
 
                         if (_selectedNoteIndex != null) {
                           // Update existing note
-                          final noteId = state.notes[_selectedNoteIndex!].id;
+                          final noteId = notes[_selectedNoteIndex!].id;
 
                           print("NoteId : $noteId");
 
