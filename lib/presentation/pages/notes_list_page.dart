@@ -1,10 +1,7 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:media_pad/config/route/routes_name.dart';
+
 import 'package:media_pad/core/constants.dart';
 import 'package:media_pad/data/models/note_model.dart';
 import 'package:media_pad/presentation/bloc/Authentication/auth_bloc.dart';
@@ -22,10 +19,15 @@ class _NotesListPageState extends State<NotesListPage> {
   int? _selectedNoteIndex;
   bool _showDetails = false; // Add this line
 
-  // List<File> _selectedFiles = [];
-
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    context.read<MediaNotesBloc>().add(LoadNotesEvent());
+  }
 
   @override
   void dispose() {
@@ -63,8 +65,8 @@ class _NotesListPageState extends State<NotesListPage> {
 
   @override
   Widget build(BuildContext context) {
+    print("Build Build");
     final isWeb = MediaQuery.of(context).size.width > 600;
-    print(MediaQuery.of(context).size.width);
     return Scaffold(
       appBar: AppBar(
         title: Text(AppConstants.appName),
@@ -77,40 +79,47 @@ class _NotesListPageState extends State<NotesListPage> {
           ),
         ],
       ),
-      body: StreamBuilder<List<NoteModel>>(stream: context.read<MediaNotesBloc>().noteSteam, builder: (context, snapshot) {
+      body:
 
-        if (snapshot.connectionState == ConnectionState.waiting){
-          return const Center(child: CircularProgressIndicator(),);
-        }
+          // StreamBuilder<List<NoteModel>>(
+          //     stream: context.read<MediaNotesBloc>().noteSteam,
+          //     builder: (context, snapshot) {
+          //       if (snapshot.connectionState == ConnectionState.waiting) {
+          //         return const Center(
+          //           child: CircularProgressIndicator(),
+          //         );
+          //       }
+          //
+          //       if (snapshot.hasError) {
+          //         return Center(
+          //           child: Text("Error : ${snapshot.error}"),
+          //         );
+          //       }
+          //
+          //       if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          //         return const Center(
+          //           child: Text("No notes found"),
+          //         );
+          //       }
+          //
+          //       return _buildNotesLayout(snapshot.data!, isWeb);
+          //     })
 
-        if (snapshot.hasError) {
-          return Center(child: Text("Error : ${snapshot.error}"),);
-        }
-
-        if(!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No notes found"),);
-        }
-
-        return _buildNotesLayout(snapshot.data!, isWeb);
-
-      })
-
-      // BlocBuilder<MediaNotesBloc, MediaNotesState>(
-      //   builder: (context, state) {
-      //     if (state is MediaNotesLoadingState) {
-      //       return const Center(child: CircularProgressIndicator());
-      //     } else if (state is MediaNotesLoadedState) {
-      //       return _buildNotesLayout(state, isWeb);
-      //     }
-      //     // else if(state is MediaNotesFilesPickedState){
-      //     //   return _buildNotesLayout(state as MediaNotesLoadedState, isWeb);
-      //     // }
-      //     return Center(
-      //       child: Text("No notes found"),
-      //     );
-      //   },
-      // )
-      ,
+          BlocBuilder<MediaNotesBloc, MediaNotesState>(
+        builder: (context, state) {
+          if (state is MediaNotesLoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is MediaNotesLoadedState) {
+            return _buildNotesLayout(state, isWeb);
+          }
+          // else if(state is MediaNotesFilesPickedState){
+          //   return _buildNotesLayout(state as MediaNotesLoadedState, isWeb);
+          // }
+          return Center(
+            child: Text("No notes found"),
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () {
@@ -137,175 +146,322 @@ class _NotesListPageState extends State<NotesListPage> {
     );
   }
 
-  Widget _buildNotesLayout(List<NoteModel> notes , bool isWeb) {
-    if (isWeb) {
-      return Row(
-        children: [
-          // Left Side: Notes List
-          SizedBox(
-            width: 300, // Fixed width for the notes list
-            child: ListView.builder(
-              itemCount: notes.length,
-              padding: const EdgeInsets.all(8),
-              itemBuilder: (context, index) {
-                final note = notes[index];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedNoteIndex = index;
-                      _loadNoteIntoForm(note);
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _selectedNoteIndex == index
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.1)
-                          : Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: _selectedNoteIndex == index
-                          ? Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: ListTile(
-                      title: Text(note.title),
-                      subtitle: Text(note.content),
-                      // trailing: IconButton(
-                      //     onPressed: () {
-                      //       final noteId = note.id;
-                      //       context
-                      //           .read<MediaNotesBloc>()
-                      //           .add(DeleteNoteEvent(noteId: noteId));
-                      //     },
-                      //     icon: Icon(
-                      //       Icons.delete,
-                      //       color: Colors.red,
-                      //     )),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Right Side: Add/Edit Note Form and Details
-          Expanded(
-            flex: _showDetails && MediaQuery.of(context).size.width < 1000
-                ? 1
-                : 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
+  Widget _buildNotesLayout(MediaNotesLoadedState state, bool isWeb) {
+    return RefreshIndicator(
+        child: isWeb
+            ? Row(
                 children: [
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 300),
-                    child: _showDetails &&
-                            MediaQuery.of(context).size.width < 1000
-                        ? const SizedBox
-                            .shrink() // Hide form when details are shown on small screens
-                        : _buildNoteForm(notes),
+                  // Left Side: Notes List
+                  SizedBox(
+                    width: 300, // Fixed width for the notes list
+                    child: ListView.builder(
+                      itemCount: state.notes.length,
+                      padding: const EdgeInsets.all(8),
+                      itemBuilder: (context, index) {
+                        final note = state.notes[index];
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedNoteIndex = index;
+                              _loadNoteIntoForm(note);
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _selectedNoteIndex == index
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.1)
+                                  : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: _selectedNoteIndex == index
+                                  ? Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      width: 2,
+                                    )
+                                  : null,
+                            ),
+                            child: ListTile(
+                              title: Text(note.title),
+                              subtitle: Text(note.content),
+                              // trailing: IconButton(
+                              //     onPressed: () {
+                              //       final noteId = note.id;
+                              //       context
+                              //           .read<MediaNotesBloc>()
+                              //           .add(DeleteNoteEvent(noteId: noteId));
+                              //     },
+                              //     icon: Icon(
+                              //       Icons.delete,
+                              //       color: Colors.red,
+                              //     )),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          // Details Section (only shown when _showDetails is true)
-          if (_showDetails && _selectedNoteIndex != null)
-            Expanded(
-              flex: MediaQuery.of(context).size.width < 1000 ? 2 : 1,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildNoteDetails(notes[_selectedNoteIndex!]),
-                ),
-              ),
-            ),
-        ],
-      );
-    } else {
-      // Mobile Layout
-      return BlocBuilder<MediaNotesBloc, MediaNotesState>(
-        builder: (context, states) {
-          return ListView.builder(
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              final note = notes[index];
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => NoteFormPage(
-                                note: note,
-                              )));
-                },
-                child: Dismissible(
-                  key: Key(note.id),
-                  onDismissed: (direction) {
-                    setState(() {
-                      // Remove the note from the local list immediately
-                      notes.removeAt(index);
-                    });
 
-                    final noteId = note.id;
-                    context
-                        .read<MediaNotesBloc>()
-                        .add(DeleteNoteEvent(noteId: noteId));
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Item deleted")),
-                    );
-                  },
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Colors.red,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                  // Right Side: Add/Edit Note Form and Details
+                  Expanded(
+                    flex:
+                        _showDetails && MediaQuery.of(context).size.width < 1000
+                            ? 1
+                            : 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 300),
+                            child: _showDetails &&
+                                    MediaQuery.of(context).size.width < 1000
+                                ? const SizedBox
+                                    .shrink() // Hide form when details are shown on small screens
+                                : _buildNoteForm(state.notes),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  // ... rest of dismissible code
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                  // Details Section (only shown when _showDetails is true)
+                  if (_showDetails && _selectedNoteIndex != null)
+                    Expanded(
+                      flex: MediaQuery.of(context).size.width < 1000 ? 2 : 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 300),
+                          child: _buildNoteDetails(
+                              state.notes[_selectedNoteIndex!]),
                         ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        note.title,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
-                      subtitle: Text(
-                        note.content,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
                     ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      );
-    }
+                ],
+              )
+            : BlocBuilder<MediaNotesBloc, MediaNotesState>(
+                builder: (context, states) {
+                  return ListView.builder(
+                    itemCount: state.notes.length,
+                    itemBuilder: (context, index) {
+                      final note = state.notes[index];
+                      return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => NoteFormPage(
+                                          note: note,
+                                        )));
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                note.title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text(
+                                note.content,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                            ),
+                          ));
+                    },
+                  );
+                },
+              ),
+        onRefresh: () async {
+          context.read<MediaNotesBloc>().add(LoadNotesEvent());
+        });
+
+    // if (isWeb) {
+    //   return Row(
+    //     children: [
+    //       // Left Side: Notes List
+    //       SizedBox(
+    //         width: 300, // Fixed width for the notes list
+    //         child: ListView.builder(
+    //           itemCount: notes.length,
+    //           padding: const EdgeInsets.all(8),
+    //           itemBuilder: (context, index) {
+    //             final note = notes[index];
+    //             return GestureDetector(
+    //               onTap: () {
+    //                 setState(() {
+    //                   _selectedNoteIndex = index;
+    //                   _loadNoteIntoForm(note);
+    //                 });
+    //               },
+    //               child: Container(
+    //                 margin: const EdgeInsets.all(8),
+    //                 padding: const EdgeInsets.all(8),
+    //                 decoration: BoxDecoration(
+    //                   color: _selectedNoteIndex == index
+    //                       ? Theme.of(context)
+    //                           .colorScheme
+    //                           .primary
+    //                           .withOpacity(0.1)
+    //                       : Theme.of(context).cardColor,
+    //                   borderRadius: BorderRadius.circular(8),
+    //                   border: _selectedNoteIndex == index
+    //                       ? Border.all(
+    //                           color: Theme.of(context).colorScheme.primary,
+    //                           width: 2,
+    //                         )
+    //                       : null,
+    //                 ),
+    //                 child: ListTile(
+    //                   title: Text(note.title),
+    //                   subtitle: Text(note.content),
+    //                   // trailing: IconButton(
+    //                   //     onPressed: () {
+    //                   //       final noteId = note.id;
+    //                   //       context
+    //                   //           .read<MediaNotesBloc>()
+    //                   //           .add(DeleteNoteEvent(noteId: noteId));
+    //                   //     },
+    //                   //     icon: Icon(
+    //                   //       Icons.delete,
+    //                   //       color: Colors.red,
+    //                   //     )),
+    //                 ),
+    //               ),
+    //             );
+    //           },
+    //         ),
+    //       ),
+    //
+    //       // Right Side: Add/Edit Note Form and Details
+    //       Expanded(
+    //         flex: _showDetails && MediaQuery.of(context).size.width < 1000
+    //             ? 1
+    //             : 2,
+    //         child: Padding(
+    //           padding: const EdgeInsets.all(16.0),
+    //           child: Column(
+    //             children: [
+    //               AnimatedSize(
+    //                 duration: const Duration(milliseconds: 300),
+    //                 child: _showDetails &&
+    //                         MediaQuery.of(context).size.width < 1000
+    //                     ? const SizedBox
+    //                         .shrink() // Hide form when details are shown on small screens
+    //                     : _buildNoteForm(notes),
+    //               ),
+    //             ],
+    //           ),
+    //         ),
+    //       ),
+    //       // Details Section (only shown when _showDetails is true)
+    //       if (_showDetails && _selectedNoteIndex != null)
+    //         Expanded(
+    //           flex: MediaQuery.of(context).size.width < 1000 ? 2 : 1,
+    //           child: Padding(
+    //             padding: const EdgeInsets.all(16.0),
+    //             child: AnimatedSize(
+    //               duration: const Duration(milliseconds: 300),
+    //               child: _buildNoteDetails(notes[_selectedNoteIndex!]),
+    //             ),
+    //           ),
+    //         ),
+    //     ],
+    //   );
+    // } else {
+    //   // Mobile Layout
+    //   return BlocBuilder<MediaNotesBloc, MediaNotesState>(
+    //     builder: (context, states) {
+    //       return ListView.builder(
+    //         itemCount: notes.length,
+    //         itemBuilder: (context, index) {
+    //           final note = notes[index];
+    //           return GestureDetector(
+    //             onTap: () {
+    //               Navigator.push(
+    //                   context,
+    //                   MaterialPageRoute(
+    //                       builder: (context) => NoteFormPage(
+    //                             note: note,
+    //                           )));
+    //             },
+    //             child: Dismissible(
+    //               key: Key(note.id),
+    //               onDismissed: (direction) {
+    //                 setState(() {
+    //                   // Remove the note from the local list immediately
+    //                   notes.removeAt(index);
+    //                 });
+    //
+    //                 final noteId = note.id;
+    //                 context
+    //                     .read<MediaNotesBloc>()
+    //                     .add(DeleteNoteEvent(noteId: noteId));
+    //
+    //                 ScaffoldMessenger.of(context).showSnackBar(
+    //                   SnackBar(content: Text("Item deleted")),
+    //                 );
+    //               },
+    //               direction: DismissDirection.endToStart,
+    //               background: Container(
+    //                 color: Colors.red,
+    //                 alignment: Alignment.centerRight,
+    //                 padding: const EdgeInsets.symmetric(horizontal: 20),
+    //                 child: const Icon(Icons.delete, color: Colors.white),
+    //               ),
+    //               // ... rest of dismissible code
+    //               child: Container(
+    //                 margin: const EdgeInsets.all(8),
+    //                 padding: const EdgeInsets.all(12),
+    //                 decoration: BoxDecoration(
+    //                   color: Theme.of(context).cardColor,
+    //                   borderRadius: BorderRadius.circular(12),
+    //                   boxShadow: [
+    //                     BoxShadow(
+    //                       color: Colors.black,
+    //                       blurRadius: 4,
+    //                       offset: const Offset(0, 2),
+    //                     ),
+    //                   ],
+    //                 ),
+    //                 child: ListTile(
+    //                   title: Text(
+    //                     note.title,
+    //                     style: const TextStyle(fontWeight: FontWeight.w500),
+    //                   ),
+    //                   subtitle: Text(
+    //                     note.content,
+    //                     maxLines: 2,
+    //                     overflow: TextOverflow.ellipsis,
+    //                   ),
+    //                   trailing: const Icon(Icons.chevron_right),
+    //                 ),
+    //               ),
+    //             ),
+    //           );
+    //         },
+    //       );
+    //     },
+    //   );
+    // }
   }
 
   // Add new _buildNoteDetails method

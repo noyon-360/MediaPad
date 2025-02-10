@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -64,44 +62,65 @@ class NoteFormPage extends StatelessWidget {
             ),
 
             SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                if (titleController.text.isEmpty || contentController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Title and content cannot be empty"),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                  return;
-                }
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (titleController.text.isEmpty || contentController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Title and content cannot be empty"),
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                          ),
+                        );
+                        return;
+                      }
 
-                if (note != null) {
-                  // Update existing note
-                  // final updatedNote = note!.copyWith(
-                  //   title: _titleController.text,
-                  //   content: _contentController.text,
-                  //   updatedAt: DateTime.now(),
-                  // );
-                  final noteId = note!.id;
+                      if (note != null) {
+                        // Update existing note
+                        // final updatedNote = note!.copyWith(
+                        //   title: _titleController.text,
+                        //   content: _contentController.text,
+                        //   updatedAt: DateTime.now(),
+                        // );
+                        final noteId = note!.id;
 
-                  print(noteId);
+                        print(noteId);
 
-                  context.read<MediaNotesBloc>().add(EditNoteEvent(noteId: noteId, title: titleController.text, content: contentController.text));
-                } else {
-                  // Add new note
-                  // final newNote = NoteModel(
-                  //   id: DateTime.now().toString(), // Generate unique ID
-                  //   title: _titleController.text,
-                  //   content: _contentController.text,
-                  //   updatedAt: DateTime.now(),
-                  // );
-                  context.read<MediaNotesBloc>().add(AddNoteEvent(title: titleController.text, content: contentController.text));
-                }
+                        context.read<MediaNotesBloc>().add(EditNoteEvent(noteId: noteId, title: titleController.text, content: contentController.text));
+                      } else {
+                        // Add new note
+                        // final newNote = NoteModel(
+                        //   id: DateTime.now().toString(), // Generate unique ID
+                        //   title: _titleController.text,
+                        //   content: _contentController.text,
+                        //   updatedAt: DateTime.now(),
+                        // );
+                        context.read<MediaNotesBloc>().add(AddNoteEvent(title: titleController.text, content: contentController.text));
+                      }
 
-                Navigator.pop(context); // Close the form after saving
-              },
-              child: Text(note != null ? "Update Note" : "Add Note"),
+                      Navigator.pop(context); // Close the form after saving
+                    },
+                    child: Text(note != null ? "Update Note" : "Add Note"),
+                  ),
+                ),
+
+                // const Spacer(),
+                SizedBox(width: 10,),
+
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      onPressed: (){
+                        context.read<MediaNotesBloc>().add(DeleteNoteEvent(noteId: note!.id));
+                      }, child: Text("Delete", style: TextStyle(color: Colors.white),)),
+                ),
+              ],
             ),
           ],
         ),
