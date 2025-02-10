@@ -26,7 +26,6 @@ jobs:
 
       - name: Create Constants File
         run: |
-          mkdir -p lib/core
           echo "class AppConstants {" > lib/core/constants.dart
           echo "  static const String appName = 'Media Pad';" >> lib/core/constants.dart
           echo "  static const String appTitle = 'Title';" >> lib/core/constants.dart
