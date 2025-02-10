@@ -26,13 +26,12 @@ jobs:
 
       - name: Create Constants File
         run: |
-          mkdir -p lib/core
           echo "class AppConstants {" > lib/core/constants.dart
           echo "  static const String appName = 'Media Pad';" >> lib/core/constants.dart
           echo "  static const String appTitle = 'Title';" >> lib/core/constants.dart
-          echo "  static const String tokenKey = '${ { secrets.TOKEN_KEY } }';" >> lib/core/constants.dart
-          echo "  static const String userKey = '${ { secrets.USER_KEY } }';" >> lib/core/constants.dart
-          echo "  static const String baseUrl = '${ { secrets.BASE_URL } }';" >> lib/core/constants.dart
+          echo "  static const String tokenKey = '${{ secrets.TOKEN_KEY }}';" >> lib/core/constants.dart
+          echo "  static const String userKey = '${{ secrets.USER_KEY }}';" >> lib/core/constants.dart
+          echo "  static const String baseUrl = '${{ secrets.BASE_URL }}';" >> lib/core/constants.dart
           echo "}" >> lib/core/constants.dart
 
       - name: Build APK
