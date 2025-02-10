@@ -41,17 +41,17 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }} # Use the PAT here
+          GITHUB_TOKEN: ${{ secrets.PAT }} # Use the default GITHUB_TOKEN or a PAT
         with:
-          tag_name: ${{ github.ref }} # Use the tag that triggered the workflow
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.MediaPad }} # Use the tag name (e.g., v1.0.0)
+          release_name: Release ${{ github.MediaPad }}
           draft: false
           prerelease: false
 
       - name: Upload APK to Release
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }} # Use the PAT here
+          GITHUB_TOKEN: ${{ secrets.PAT }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # URL from the create-release step
           asset_path: build/app/outputs/flutter-apk/app-release.apk
